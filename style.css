@@ -60,14 +60,55 @@ header h1 {
 }
 
 #btn-tema {
-    background: none;
+    position: relative;
+    width: 74px;
+    height: 38px;
     border: 1px solid var(--border);
-    font-size: 1.2rem;
-    padding: 8px 12px;
-    border-radius: 50%;
+    border-radius: 999px;
     cursor: pointer;
-    background-color: var(--surface);
-    box-shadow: none;
+    background: linear-gradient(135deg, #1f2937, #0f172a);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+}
+
+#btn-tema::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    width: 24px;
+    height: 24px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    z-index: 1;
+}
+
+body[data-theme="light"] #btn-tema::before {
+    transform: translateX(34px);
+}
+
+body[data-theme="light"] #btn-tema {
+    background: linear-gradient(135deg, #f8d86a, #f39c12);
+    justify-content: flex-end;
+}
+
+#btn-tema span {
+    position: relative;
+    z-index: 2;
+    font-size: 0.8rem;
+    transform: translateX(28px);
+    transition: transform 0.3s ease;
+}
+
+body[data-theme="light"] #btn-tema span {
+    transform: translateX(-28px);
 }
 
 header p {
