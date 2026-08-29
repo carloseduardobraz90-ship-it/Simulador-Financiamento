@@ -76,6 +76,42 @@ if (campoMeses) {
     });
 }
 
+// --- FUNÇÃO DE BUSCA DA TAXA NO BANCO CENTRAL (API SGS/BCB) ---
+// Usamos a série 432 (Taxa média de juros de financiamento imobiliário PF) ou a 11 (Selic acumulada mensalizada). 
+// Vamos buscar a série 432 como referência imobiliária padrão real.
+async function buscarTaxaBancoCentral() {
+    if (!campoTaxa) return;
+    
+    try {
+        // API do Banco Central - último valor da série 432 (Crédito Imobiliário PF)
+        const resposta = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json');
+        if (!resposta.ok) throw new Error('Erro ao buscar taxa da API');
+        
+        const dados = await resposta.json();
+        if (dados && dados.length > 0) {
+            const taxaBcb = Number(dados[0].valor);
+            if (Number.isFinite(taxaBcb)) {
+                // Formata para o padrão brasileiro (ex: 10,50)
+                campoTaxa.value = taxaBcb.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        }
+    } catch (erro) {
+        console.warn('Não foi possível carregar a taxa do Banco Central automaticamente, mantendo valor padrão.', erro);
+        // Fallback caso a API esteja bloqueada por CORS em algum ambiente restrito
+        if (!campoTaxa.value) {
+            campoTaxa.value = '10,50';
+        }
+    }
+}
+
+// Executa a busca assim que a página carrega
+window.addEventListener('DOMContentLoaded', () => {
+    buscarTaxaBancoCentral();
+});
+
 const formSimulador = document.getElementById('form-simulador');
 
 if (formSimulador) {
