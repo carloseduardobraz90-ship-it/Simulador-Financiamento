@@ -3,18 +3,10 @@ const temaButton = document.getElementById('btn-tema');
 if (temaButton) {
     const aplicarTema = (tema) => {
         document.body.setAttribute('data-theme', tema);
-
         const icone = tema === 'light' ? '☀️' : '🌙';
         const span = temaButton.querySelector('span');
-
-        if (span) {
-            span.textContent = icone;
-        }
-
-        temaButton.setAttribute(
-            'aria-label',
-            tema === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'
-        );
+        if (span) span.textContent = icone;
+        temaButton.setAttribute('aria-label', tema === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro');
     };
 
     aplicarTema(document.body.getAttribute('data-theme') || 'dark');
@@ -36,38 +28,32 @@ const converterParaNumero = (valor) => {
     const texto = String(valor ?? '')
         .replace(/\./g, '')
         .replace(',', '.');
-
     const numero = Number(texto);
     return Number.isFinite(numero) ? numero : NaN;
 };
 
 const aplicarMascaraMoeda = (elemento) => {
     const texto = String(elemento.value ?? '').replace(/\D/g, '');
-
     if (!texto) {
         elemento.value = '';
         return;
     }
-
-    const numero = Number(texto);
+    const numero = Number(texto) / 100;
     elemento.value = formatarMoeda(numero);
 };
 
 const aplicarMascaraTaxa = (elemento) => {
     const texto = String(elemento.value ?? '').replace(',', '.');
     const somenteNumeros = texto.replace(/[^\d.]/g, '');
-
     if (!somenteNumeros || somenteNumeros === '.') {
         elemento.value = '';
         return;
     }
-
     const numero = Number(somenteNumeros);
     if (!Number.isFinite(numero)) {
         elemento.value = '';
         return;
     }
-
     elemento.value = numero.toLocaleString('pt-BR', {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
@@ -80,22 +66,10 @@ const campoTaxa = document.getElementById('taxa');
 const campoMeses = document.getElementById('meses');
 const campoRenda = document.getElementById('renda');
 
-if (campoValor) {
-    campoValor.addEventListener('input', () => aplicarMascaraMoeda(campoValor));
-}
-
-if (campoEntrada) {
-    campoEntrada.addEventListener('input', () => aplicarMascaraMoeda(campoEntrada));
-}
-
-if (campoRenda) {
-    campoRenda.addEventListener('input', () => aplicarMascaraMoeda(campoRenda));
-}
-
-if (campoTaxa) {
-    campoTaxa.addEventListener('input', () => aplicarMascaraTaxa(campoTaxa));
-}
-
+if (campoValor) campoValor.addEventListener('input', () => aplicarMascaraMoeda(campoValor));
+if (campoEntrada) campoEntrada.addEventListener('input', () => aplicarMascaraMoeda(campoEntrada));
+if (campoRenda) campoRenda.addEventListener('input', () => aplicarMascaraMoeda(campoRenda));
+if (campoTaxa) campoTaxa.addEventListener('input', () => aplicarMascaraTaxa(campoTaxa));
 if (campoMeses) {
     campoMeses.addEventListener('input', () => {
         campoMeses.value = campoMeses.value.replace(/\D/g, '');
@@ -132,7 +106,6 @@ if (formSimulador) {
 
         const taxaMensal = (taxaAnual / 100) / 12;
 
-        // --- CÁLCULO SISTEMA PRICE ---
         let prestacaoPrice = 0;
         if (taxaMensal === 0) {
             prestacaoPrice = valorFinanciado / prazoMeses;
@@ -144,7 +117,6 @@ if (formSimulador) {
         const totalPagoPrice = prestacaoPrice * prazoMeses;
         const totalJurosPrice = totalPagoPrice - valorFinanciado;
 
-        // --- CÁLCULO SISTEMA SAC ---
         const amortizacaoSac = valorFinanciado / prazoMeses;
         let saldoDevedorSac = valorFinanciado;
         let totalPagoSac = 0;
@@ -152,12 +124,10 @@ if (formSimulador) {
         let primeiraParcelaSac = 0;
         let ultimaParcelaSac = 0;
 
-        const estruturaGrafico = {
-            labels: [],
-            price: [],
-            sac: []
-        };
-
+        const mesesRotulos = [];
+        const valoresJurosSac = [];
+        const valoresParcelaSac = [];
+        const valoresParcelaPrice = [];
         let linhasTabelaHTML = '';
 
         for (let mes = 1; mes <= prazoMeses; mes++) {
@@ -171,9 +141,12 @@ if (formSimulador) {
             totalJurosSac += jurosSac;
             saldoDevedorSac -= amortizacaoSac;
 
-            estruturaGrafico.labels.push(String(mes));
-            estruturaGrafico.price.push(prestacaoPrice);
-            estruturaGrafico.sac.push(prestacaoSac);
+            if (prazoMeses <= 60 || mes % 12 === 0 || mes === 1) {
+                mesesRotulos.push(`Mês ${mes}`);
+                valoresJurosSac.push(Number(jurosSac.toFixed(2)));
+                valoresParcelaSac.push(Number(prestacaoSac.toFixed(2)));
+                valoresParcelaPrice.push(Number(prestacaoPrice.toFixed(2)));
+            }
 
             if (mes <= 60) {
                 linhasTabelaHTML += `
@@ -209,6 +182,7 @@ if (formSimulador) {
         document.getElementById('sac-juros').textContent = `R$ ${formatarMoeda(totalJurosSac)}`;
 
         document.getElementById('corpo-tabela').innerHTML = linhasTabelaHTML;
+        document.getElementById('resultados').classList.remove('oculto');
 
         const ctx = document.getElementById('graficoJuros');
         if (ctx) {
@@ -219,25 +193,31 @@ if (formSimulador) {
             window.graficoJurosInstancia = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: estruturaGrafico.labels,
+                    labels: mesesRotulos,
                     datasets: [
                         {
-                            label: 'Sistema PRICE',
-                            data: estruturaGrafico.price,
-                            borderColor: '#36A2EB',
-                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            label: 'Juros Mensais (SAC)',
+                            data: valoresJurosSac,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
                             borderWidth: 2,
-                            tension: 0.2,
-                            fill: false
+                            fill: true,
+                            tension: 0.3
                         },
                         {
-                            label: 'Sistema SAC',
-                            data: estruturaGrafico.sac,
-                            borderColor: '#FF6384',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            label: 'Parcela Mensal (SAC)',
+                            data: valoresParcelaSac,
+                            borderColor: '#3498db',
                             borderWidth: 2,
-                            tension: 0.2,
-                            fill: false
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Parcela Fixa (PRICE)',
+                            data: valoresParcelaPrice,
+                            borderColor: '#2ecc71',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.3
                         }
                     ]
                 },
@@ -247,37 +227,34 @@ if (formSimulador) {
                     plugins: {
                         legend: {
                             labels: {
-                                color: '#dfe6e9'
+                                color: getComputedStyle(document.body).getPropertyValue('--text-main')
                             }
                         }
                     },
                     scales: {
-                        x: {
-                            ticks: {
-                                color: '#dfe6e9'
-                            },
+                        y: {
+                            beginAtZero: true,
                             grid: {
-                                color: 'rgba(255,255,255,0.08)'
+                                color: getComputedStyle(document.body).getPropertyValue('--border')
+                            },
+                            ticks: {
+                                color: getComputedStyle(document.body).getPropertyValue('--text-muted'),
+                                callback: function(value) {
+                                    return 'R$ ' + Number(value).toLocaleString('pt-BR');
+                                }
                             }
                         },
-                        y: {
-                            ticks: {
-                                color: '#dfe6e9',
-                                callback: function(value) {
-                                    return 'R$ ' + Number(value).toLocaleString('pt-BR', {
-                                        maximumFractionDigits: 0
-                                    });
-                                }
-                            },
+                        x: {
                             grid: {
-                                color: 'rgba(255,255,255,0.08)'
+                                color: getComputedStyle(document.body).getPropertyValue('--border')
+                            },
+                            ticks: {
+                                color: getComputedStyle(document.body).getPropertyValue('--text-muted')
                             }
                         }
                     }
                 }
             });
         }
-
-        document.getElementById('resultados').classList.remove('oculto');
     });
 }
