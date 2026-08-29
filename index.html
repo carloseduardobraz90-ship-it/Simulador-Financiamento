@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Financiamento - SAC vs PRICE</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <header>
+        <h1>Simulador de Financiamento Imobiliário</h1>
+        <p>Compare os sistemas SAC e PRICE de forma rápida e prática</p>
+    </header>
+
+    <main>
+        <form id="form-simulador">
+            <h2>Dados do Financiamento</h2>
+            
+            <label>Valor Total do Imóvel (R$):
+                <input type="text" id="valor" inputmode="numeric" required placeholder="Ex: 300.000,00">
+            </label>
+
+            <label>Valor de Entrada (R$):
+                <input type="text" id="entrada" inputmode="numeric" placeholder="Ex: 60.000,00 (Opcional)">
+            </label>
+
+            <label>Taxa de Juros Anual (% a.a.):
+                <input type="text" id="taxa" inputmode="decimal" required placeholder="Ex: 10,5">
+            </label>
+
+            <label>Prazo (em meses):
+                <input type="text" id="meses" inputmode="numeric" required placeholder="Ex: 360">
+            </label>
+
+            <label>Renda Mensal (R$):
+                <input type="text" id="renda" inputmode="numeric" required placeholder="Ex: 8.000,00">
+            </label>
+
+            <button type="submit">Simular e Comparar</button>
+        </form>
+
+        <section id="resultados" class="oculto">
+            <h2>Análise de Viabilidade (Limite 30% da Renda)</h2>
+            <div id="alerta-renda" class="alerta"></div>
+
+            <div class="cards-comparacao">
+                <div class="card">
+                    <h3>Sistema PRICE (Tabela Price)</h3>
+                    <p><strong>Parcela Inicial:</strong> <span id="price-parcela"></span></p>
+                    <p><strong>Total Pago:</strong> <span id="price-total"></span></p>
+                    <p><strong>Total de Juros:</strong> <span id="price-juros"></span></p>
+                </div>
+                <div class="card">
+                    <h3>Sistema SAC</h3>
+                    <p><strong>1ª Parcela:</strong> <span id="sac-primeira"></span></p>
+                    <p><strong>Última Parcela:</strong> <span id="sac-ultima"></span></p>
+                    <p><strong>Total Pago:</strong> <span id="sac-total"></span></p>
+                    <p><strong>Total de Juros:</strong> <span id="sac-juros"></span></p>
+                </div>
+            </div>
+
+            <h2>Evolução das Parcelas</h2>
+            <div class="tabela-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mês</th>
+                            <th>Amortização (SAC)</th>
+                            <th>Juros (SAC)</th>
+                            <th>Parcela (SAC)</th>
+                            <th>Parcela (PRICE)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 - Desenvolvido para Portfólio Acadêmico</p>
+    </footer>
+</body>
+</html>
