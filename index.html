@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador de Financiamento - SAC vs PRICE</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Biblioteca Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js" defer></script>
 </head>
 <body>
     <header>
         <h1>Simulador de Financiamento Imobiliário</h1>
-        <p>Compare os sistemas SAC e PRICE de forma rápida e prática</p>
+        <p>Compare os sistemas SAC e PRICE e veja o impacto dos juros</p>
     </header>
 
     <main>
@@ -60,7 +62,13 @@
                 </div>
             </div>
 
-            <h2>Evolução das Parcelas</h2>
+            <!-- Seção do Gráfico Interativo -->
+            <h2>Evolução Comparativa de Juros e Parcelas</h2>
+            <div class="grafico-container" style="position: relative; height:350px; width:100%; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;">
+                <canvas id="graficoJuros"></canvas>
+            </div>
+
+            <h2>Evolução das Parcelas Detalhada</h2>
             <div class="tabela-container">
                 <table>
                     <thead>

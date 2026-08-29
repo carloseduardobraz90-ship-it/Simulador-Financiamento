@@ -54,6 +54,8 @@ const campoTaxa = document.getElementById('taxa');
 const campoRenda = document.getElementById('renda');
 const campoMeses = document.getElementById('meses');
 
+let meuGrafico = null; // Instância global do gráfico para atualizar sem bugar
+
 // --- BUSCAR TAXA DO BANCO CENTRAL AO CARREGAR A PÁGINA ---
 async function buscarTaxaBancoCentral() {
     try {
@@ -122,7 +124,6 @@ document.getElementById('form-simulador').addEventListener('submit', function(e)
         return;
     }
 
-    // O valor principal financiado é o total do imóvel menos a entrada informada
     const valorPrincipal = valorImovel - valorEntrada;
     const taxaMensal = (taxaAnual / 100) / 12;
 
@@ -147,6 +148,12 @@ document.getElementById('form-simulador').addEventListener('submit', function(e)
     let ultimaParcelaSac = 0;
 
     let linhasTabelaHTML = '';
+    
+    // Arrays para popular o gráfico (vamos amostrar os meses para o gráfico não ficar pesado)
+    let mesesRotulos = [];
+    let valoresJurosSac = [];
+    let valoresParcelaPrice = [];
+    let valoresParcelaSac = [];
 
     for (let mes = 1; mes <= prazoMeses; mes++) {
         const jurosSac = saldoDevedorSac * taxaMensal;
@@ -158,6 +165,14 @@ document.getElementById('form-simulador').addEventListener('submit', function(e)
         totalPagoSac += prestacaoSac;
         totalJurosSac += jurosSac;
         saldoDevedorSac -= amortizacaoSac;
+
+        // Guarda dados para o gráfico (pode ser a cada mês ou a cada ano dependendo do prazo)
+        if (prazoMeses <= 60 || mes % 12 === 0 || mes === 1) {
+            mesesRotulos.push(`Mês ${mes}`);
+            valoresJurosSac.push(jurosSac.toFixed(2));
+            valoresParcelaSac.push(prestacaoSac.toFixed(2));
+            valoresParcelaPrice.push(prestacaoPrice.toFixed(2));
+        }
 
         if (mes <= 60) {
             linhasTabelaHTML += `
@@ -179,9 +194,6 @@ document.getElementById('form-simulador').addEventListener('submit', function(e)
         alertaRenda.className = 'alerta aprovado';
         alertaRenda.textContent = `Aprovado! A maior parcela (R$ ${formatarMoeda(maiorParcela)}) compromete ${((maiorParcela / rendaMensal) * 100).toFixed(1)}% da sua renda, ficando abaixo do limite de 30% (R$ ${formatarMoeda(limiteRenda)}).`;
     } else {
-        // --- CÁLCULO DA ENTRADA NECESSÁRIA PARA APROVAÇÃO ---
-        // Quanto o valor principal deveria ser para que a maior parcela fosse igual ao limiteRenda?
-        // Como o financiamento é linear em relação ao principal, podemos fazer uma proporção:
         const principalMaxPermitido = valorPrincipal * (limiteRenda / maiorParcela);
         const valorTotalFinanciamentoNecessario = valorImovel - principalMaxPermitido;
         const entradaAdicionalNecessaria = valorTotalFinanciamentoNecessario - valorEntrada;
@@ -202,4 +214,63 @@ document.getElementById('form-simulador').addEventListener('submit', function(e)
 
     document.getElementById('corpo-tabela').innerHTML = linhasTabelaHTML;
     document.getElementById('resultados').classList.remove('oculto');
+
+    // --- CRIAR OU ATUALIZAR O GRÁFICO ---
+    const ctx = document.getElementById('graficoJuros').getContext('2d');
+    
+    if (meuGrafico) {
+        meuGrafico.destroy(); // Destroi o gráfico anterior para recriar com os novos dados
+    }
+
+    meuGrafico = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: mesesRotulos,
+            datasets: [
+                {
+                    label: 'Juros Mensais (SAC) - Caem com a Amortização',
+                    data: valoresJurosSac,
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Parcela Mensal (SAC)',
+                    data: valoresParcelaSac,
+                    borderColor: '#3498db',
+                    borderWidth: 2,
+                    tension: 0.3
+                },
+                {
+                    label: 'Parcela Fixa (PRICE)',
+                    data: valoresParcelaPrice,
+                    borderColor: '#2ecc71',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                }
+            }
+        }
+    });
 });
