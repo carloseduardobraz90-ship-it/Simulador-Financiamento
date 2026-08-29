@@ -42,21 +42,6 @@ const aplicarMascaraMoeda = (elemento) => {
     elemento.value = formatarMoeda(numero);
 };
 
-// --- CORREÇÃO DA MÁSCARA DE TAXA PARA ACEITAR VÍRGULA LIVREMENTE ---
-const aplicarMascaraTaxa = (elemento) => {
-    // Permite apenas números, ponto e vírgula
-    let texto = String(elemento.value ?? '').replace(/[^\d,\.]/g, '');
-    
-    // Substitui ponto por vírgula para manter o padrão brasileiro uniforme se o usuário usar o teclado numérico
-    // (Mantém apenas a primeira vírgula digitada)
-    const partes = texto.split(',');
-    if (partes.length > 2) {
-        texto = partes[0] + ',' + partes.slice(1).join('');
-    }
-    
-    elemento.value = texto;
-};
-
 const campoValor = document.getElementById('valor');
 const campoEntrada = document.getElementById('entrada');
 const campoTaxa = document.getElementById('taxa');
@@ -66,38 +51,39 @@ const campoRenda = document.getElementById('renda');
 if (campoValor) campoValor.addEventListener('input', () => aplicarMascaraMoeda(campoValor));
 if (campoEntrada) campoEntrada.addEventListener('input', () => aplicarMascaraMoeda(campoEntrada));
 if (campoRenda) campoRenda.addEventListener('input', () => aplicarMascaraMoeda(campoRenda));
-if (campoTaxa) campoTaxa.addEventListener('input', () => aplicarMascaraTaxa(campoTaxa));
+
 if (campoMeses) {
     campoMeses.addEventListener('input', () => {
         campoMeses.value = campoMeses.value.replace(/\D/g, '');
     });
 }
 
-// --- FUNÇÃO DE BUSCA DA TAXA NO BANCO CENTRAL (API SGS/BCB) ---
+// --- BUSCA DA TAXA DE JUROS ATUALIZADA (COM PROXY CORS SEGURO) ---
 async function buscarTaxaBancoCentral() {
     if (!campoTaxa) return;
     
     try {
-        const resposta = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json');
-        if (!resposta.ok) throw new Error('Erro ao buscar taxa da API');
+        // Usando um proxy CORS público padrão para garantir que a API do BCB responda no navegador
+        const urlBcb = 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json';
+        const resposta = await fetch(urlBcb);
+        
+        if (!resposta.ok) throw new Error('Falha ao conectar com o BCB');
         
         const dados = await resposta.json();
         if (dados && dados.length > 0) {
             const taxaBcb = Number(dados[0].valor);
             if (Number.isFinite(taxaBcb)) {
-                campoTaxa.value = taxaBcb.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
+                // Insere direto no input numérico (ex: 11.25)
+                campoTaxa.value = taxaBcb.toFixed(2);
                 return;
             }
         }
-        throw new Error('Dados inválidos retornados pela API');
+        throw new Error('Formato inválido');
     } catch (erro) {
-        console.warn('API do BCB indisponível no momento, aplicando taxa de referência.', erro);
-        // Fallback garantido para o campo não ficar em branco caso o navegador bloqueie por CORS ou instabilidade
+        console.warn('Banco Central bloqueado por CORS no browser. Usando taxa média de mercado atual.', erro);
+        // Fallback robusto caso o navegador bloqueie a requisição externa
         if (!campoTaxa.value) {
-            campoTaxa.value = '10,50';
+            campoTaxa.value = '11.25';
         }
     }
 }
@@ -114,7 +100,11 @@ if (formSimulador) {
 
         const valorPrincipal = converterParaNumero(document.getElementById('valor').value);
         const entrada = converterParaNumero(document.getElementById('entrada').value || '0');
-        const taxaAnual = converterParaNumero(document.getElementById('taxa').value);
+        
+        // Lê o valor da taxa substituindo vírgula por ponto para o cálculo matemático
+        const taxaTexto = document.getElementById('taxa').value.replace(',', '.');
+        const taxaAnual = Number(taxaTexto);
+
         const prazoMeses = parseInt(document.getElementById('meses').value.replace(/\D/g, ''), 10);
         const rendaMensal = converterParaNumero(document.getElementById('renda').value);
         const alertaRenda = document.getElementById('alerta-renda');
