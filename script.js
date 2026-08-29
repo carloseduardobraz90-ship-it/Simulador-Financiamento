@@ -42,22 +42,19 @@ const aplicarMascaraMoeda = (elemento) => {
     elemento.value = formatarMoeda(numero);
 };
 
+// --- CORREÇÃO DA MÁSCARA DE TAXA PARA ACEITAR VÍRGULA LIVREMENTE ---
 const aplicarMascaraTaxa = (elemento) => {
-    const texto = String(elemento.value ?? '').replace(',', '.');
-    const somenteNumeros = texto.replace(/[^\d.]/g, '');
-    if (!somenteNumeros || somenteNumeros === '.') {
-        elemento.value = '';
-        return;
+    // Permite apenas números, ponto e vírgula
+    let texto = String(elemento.value ?? '').replace(/[^\d,\.]/g, '');
+    
+    // Substitui ponto por vírgula para manter o padrão brasileiro uniforme se o usuário usar o teclado numérico
+    // (Mantém apenas a primeira vírgula digitada)
+    const partes = texto.split(',');
+    if (partes.length > 2) {
+        texto = partes[0] + ',' + partes.slice(1).join('');
     }
-    const numero = Number(somenteNumeros);
-    if (!Number.isFinite(numero)) {
-        elemento.value = '';
-        return;
-    }
-    elemento.value = numero.toLocaleString('pt-BR', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2
-    });
+    
+    elemento.value = texto;
 };
 
 const campoValor = document.getElementById('valor');
@@ -77,13 +74,10 @@ if (campoMeses) {
 }
 
 // --- FUNÇÃO DE BUSCA DA TAXA NO BANCO CENTRAL (API SGS/BCB) ---
-// Usamos a série 432 (Taxa média de juros de financiamento imobiliário PF) ou a 11 (Selic acumulada mensalizada). 
-// Vamos buscar a série 432 como referência imobiliária padrão real.
 async function buscarTaxaBancoCentral() {
     if (!campoTaxa) return;
     
     try {
-        // API do Banco Central - último valor da série 432 (Crédito Imobiliário PF)
         const resposta = await fetch('https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json');
         if (!resposta.ok) throw new Error('Erro ao buscar taxa da API');
         
@@ -91,23 +85,23 @@ async function buscarTaxaBancoCentral() {
         if (dados && dados.length > 0) {
             const taxaBcb = Number(dados[0].valor);
             if (Number.isFinite(taxaBcb)) {
-                // Formata para o padrão brasileiro (ex: 10,50)
                 campoTaxa.value = taxaBcb.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 });
+                return;
             }
         }
+        throw new Error('Dados inválidos retornados pela API');
     } catch (erro) {
-        console.warn('Não foi possível carregar a taxa do Banco Central automaticamente, mantendo valor padrão.', erro);
-        // Fallback caso a API esteja bloqueada por CORS em algum ambiente restrito
+        console.warn('API do BCB indisponível no momento, aplicando taxa de referência.', erro);
+        // Fallback garantido para o campo não ficar em branco caso o navegador bloqueie por CORS ou instabilidade
         if (!campoTaxa.value) {
             campoTaxa.value = '10,50';
         }
     }
 }
 
-// Executa a busca assim que a página carrega
 window.addEventListener('DOMContentLoaded', () => {
     buscarTaxaBancoCentral();
 });
