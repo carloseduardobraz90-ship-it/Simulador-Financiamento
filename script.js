@@ -53,8 +53,21 @@ const campoEntrada = document.getElementById('entrada');
 const campoTaxa = document.getElementById('taxa');
 const campoRenda = document.getElementById('renda');
 const campoMeses = document.getElementById('meses');
+const btnTema = document.getElementById('btn-tema');
 
-let meuGrafico = null; // Instância global do gráfico para atualizar sem bugar
+let meuGrafico = null;
+
+// --- GERENCIADOR DE TEMA (MODO ESCURO / CLARO) ---
+btnTema.addEventListener('click', () => {
+    const atual = document.documentElement.getAttribute('data-theme');
+    if (atual === 'light') {
+        document.documentElement.removeAttribute('data-theme');
+        btnTema.textContent = '🌙';
+    } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        btnTema.textContent = '☀️';
+    }
+});
 
 // --- BUSCAR TAXA DO BANCO CENTRAL AO CARREGAR A PÁGINA ---
 async function buscarTaxaBancoCentral() {
@@ -79,22 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
     buscarTaxaBancoCentral();
 });
 
-if (campoValor) {
-    campoValor.addEventListener('input', () => aplicarMascaraMoeda(campoValor));
-}
-
-if (campoEntrada) {
-    campoEntrada.addEventListener('input', () => aplicarMascaraMoeda(campoEntrada));
-}
-
-if (campoRenda) {
-    campoRenda.addEventListener('input', () => aplicarMascaraMoeda(campoRenda));
-}
-
-if (campoTaxa) {
-    campoTaxa.addEventListener('input', () => aplicarMascaraTaxa(campoTaxa));
-}
-
+if (campoValor) campoValor.addEventListener('input', () => aplicarMascaraMoeda(campoValor));
+if (campoEntrada) campoEntrada.addEventListener('input', () => aplicarMascaraMoeda(campoEntrada));
+if (campoRenda) campoRenda.addEventListener('input', () => aplicarMascaraMoeda(campoRenda));
+if (campoTaxa) campoTaxa.addEventListener('input', () => aplicarMascaraTaxa(campoTaxa));
 if (campoMeses) {
     campoMeses.addEventListener('input', () => {
         campoMeses.value = campoMeses.value.replace(/\D/g, '');
@@ -148,8 +149,6 @@ document.getElementById('form-simulador').addEventListener('submit', function(e)
     let ultimaParcelaSac = 0;
 
     let linhasTabelaHTML = '';
-    
-    // Arrays para popular o gráfico (vamos amostrar os meses para o gráfico não ficar pesado)
     let mesesRotulos = [];
     let valoresJurosSac = [];
     let valoresParcelaPrice = [];
@@ -166,7 +165,6 @@ document.getElementById('form-simulador').addEventListener('submit', function(e)
         totalJurosSac += jurosSac;
         saldoDevedorSac -= amortizacaoSac;
 
-        // Guarda dados para o gráfico (pode ser a cada mês ou a cada ano dependendo do prazo)
         if (prazoMeses <= 60 || mes % 12 === 0 || mes === 1) {
             mesesRotulos.push(`Mês ${mes}`);
             valoresJurosSac.push(jurosSac.toFixed(2));
@@ -215,11 +213,11 @@ document.getElementById('form-simulador').addEventListener('submit', function(e)
     document.getElementById('corpo-tabela').innerHTML = linhasTabelaHTML;
     document.getElementById('resultados').classList.remove('oculto');
 
-    // --- CRIAR OU ATUALIZAR O GRÁFICO ---
+    // --- ATUALIZAR GRÁFICO ---
     const ctx = document.getElementById('graficoJuros').getContext('2d');
     
     if (meuGrafico) {
-        meuGrafico.destroy(); // Destroi o gráfico anterior para recriar com os novos dados
+        meuGrafico.destroy();
     }
 
     meuGrafico = new Chart(ctx, {
@@ -228,7 +226,7 @@ document.getElementById('form-simulador').addEventListener('submit', function(e)
             labels: mesesRotulos,
             datasets: [
                 {
-                    label: 'Juros Mensais (SAC) - Caem com a Amortização',
+                    label: 'Juros Mensais (SAC)',
                     data: valoresJurosSac,
                     borderColor: '#e74c3c',
                     backgroundColor: 'rgba(231, 76, 60, 0.1)',
@@ -258,16 +256,30 @@ document.getElementById('form-simulador').addEventListener('submit', function(e)
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'top',
+                    labels: {
+                        color: getComputedStyle(document.body).getPropertyValue('--text-main')
+                    }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
+                    grid: {
+                        color: getComputedStyle(document.body).getPropertyValue('--border')
+                    },
                     ticks: {
+                        color: getComputedStyle(document.body).getPropertyValue('--text-muted'),
                         callback: function(value) {
                             return 'R$ ' + value.toLocaleString('pt-BR');
                         }
+                    }
+                },
+                x: {
+                    grid: {
+                        color: getComputedStyle(document.body).getPropertyValue('--border')
+                    },
+                    ticks: {
+                        color: getComputedStyle(document.body).getPropertyValue('--text-muted')
                     }
                 }
             }

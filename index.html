@@ -11,7 +11,10 @@
 </head>
 <body>
     <header>
-        <h1>Simulador de Financiamento Imobiliário</h1>
+        <div class="header-topo">
+            <h1>Simulador de Financiamento Imobiliário</h1>
+            <button id="btn-tema" title="Alternar tema claro/escuro">🌙</button>
+        </div>
         <p>Compare os sistemas SAC e PRICE e veja o impacto dos juros</p>
     </header>
 
@@ -62,9 +65,8 @@
                 </div>
             </div>
 
-            <!-- Seção do Gráfico Interativo -->
             <h2>Evolução Comparativa de Juros e Parcelas</h2>
-            <div class="grafico-container" style="position: relative; height:350px; width:100%; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;">
+            <div class="grafico-container">
                 <canvas id="graficoJuros"></canvas>
             </div>
 
